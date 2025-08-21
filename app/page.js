@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, TrendingUp, Target, Zap, BookOpen, Play } from "lucide-react"
+import Image from "next/image"
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -200,10 +201,12 @@ export default function HomePage() {
                 <Card className="h-full">
                   <CardContent className="pt-6">
                     <div className="flex items-center mb-4">
-                      <img
+                      <Image
                         src={testimonial.avatar || "/placeholder.svg"}
                         alt={testimonial.name}
                         className="w-12 h-12 rounded-full mr-4"
+                        width={60}
+                        height={60}
                       />
                       <div>
                         <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
