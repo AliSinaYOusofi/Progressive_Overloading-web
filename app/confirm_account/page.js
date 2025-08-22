@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
+    CardFooter,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Mail, ArrowLeft } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 const fadeInUp = {
@@ -23,85 +21,54 @@ const fadeInUp = {
 };
 
 export default function ConfirmAccountPage() {
-    const [code, setCode] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [isConfirmed, setIsConfirmed] = useState(false);
-    const [error, setError] = useState("");
+    const [status, setStatus] = useState("loading");
+    const [errorMessage, setErrorMessage] = useState("");
+    const searchParams = useSearchParams();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError("");
+    useEffect(() => {
+        const confirmAccount = async () => {
+            try {
+                // Get the token and type from URL parameters (from Supabase email)
+                const token = searchParams.get("token");
+                const type = searchParams.get("type");
 
-        try {
-            const response = await fetch("/api/verify_account", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ code }),
-            });
+                console.log("[v0] Token and type from URL:", token, type);
 
-            const data = await response.json();
+                if (!token || !type) {
+                    setStatus("error");
+                    setErrorMessage(
+                        "Invalid confirmation link. Missing parameters."
+                    );
+                    return;
+                }
 
-            if (response.ok) {
-                setIsConfirmed(true);
-            } else {
-                setError(data.error || "Failed to confirm account");
+                const response = await fetch("/api/verify_account", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ token, type }),
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Failed to verify account");
+                }
+
+                setStatus("success");
+            } catch (error) {
+                console.error("[v0] Error confirming account:", error);
+                setStatus("error");
+                setErrorMessage(
+                    error instanceof Error
+                        ? error.message
+                        : "An unknown error occurred while confirming your account."
+                );
             }
-        } catch (err) {
-            setError("Something went wrong. Please try again.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        };
 
-    const handleResendCode = async () => {
-        try {
-            await fetch("/api/send_email_verification", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-            // Show success message or handle response
-        } catch (err) {
-            setError("Failed to resend verification code");
-        }
-    };
-
-    if (isConfirmed) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <motion.div
-                    initial="initial"
-                    animate="animate"
-                    variants={fadeInUp}
-                    className="w-full max-w-md"
-                >
-                    <Card className="text-center">
-                        <CardHeader>
-                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CheckCircle className="h-8 w-8 text-primary" />
-                            </div>
-                            <CardTitle className="text-2xl font-bold text-primary">
-                                Account Confirmed!
-                            </CardTitle>
-                            <CardDescription>
-                                Your account has been successfully verified. You
-                                can now access all features.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button asChild className="w-full">
-                                <Link href="/">Continue to Dashboard</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
-        );
-    }
+        confirmAccount();
+    }, [searchParams]);
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -113,75 +80,149 @@ export default function ConfirmAccountPage() {
             >
                 <Card>
                     <CardHeader className="text-center">
-                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Mail className="h-8 w-8 text-primary" />
-                        </div>
                         <CardTitle className="text-2xl font-bold">
-                            Confirm Your Account
+                            {status === "loading" && "Confirming Your Account"}
+                            {status === "success" && "Account Confirmed!"}
+                            {status === "error" && "Confirmation Failed"}
                         </CardTitle>
-                        <CardDescription>
-                            Enter the verification code sent to your email
-                            address
-                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="code">Verification Code</Label>
-                                <Input
-                                    id="code"
-                                    type="text"
-                                    placeholder="Enter 6-digit code"
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    maxLength={6}
-                                    className="text-center text-lg tracking-widest"
-                                    required
-                                />
-                            </div>
-
-                            {error && (
-                                <Alert variant="destructive">
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
-
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={isLoading}
+                    <CardContent className="flex flex-col items-center text-center">
+                        {status === "loading" && (
+                            <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.5 }}
+                                className="flex flex-col items-center"
                             >
-                                {isLoading
-                                    ? "Confirming..."
-                                    : "Confirm Account"}
-                            </Button>
-                        </form>
+                                <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+                                <p className="text-muted-foreground">
+                                    Please wait while we confirm your account...
+                                </p>
+                            </motion.div>
+                        )}
 
-                        <div className="mt-6 text-center space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                                Didn&apos;t receive the code?
-                            </p>
-                            <Button
-                                variant="link"
-                                onClick={handleResendCode}
-                                className="p-0 h-auto"
+                        {status === "success" && (
+                            <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.5 }}
+                                className="flex flex-col items-center"
                             >
-                                Resend verification code
-                            </Button>
-                        </div>
+                                <CheckCircle className="h-16 w-16 text-primary mb-4" />
+                                <p className="mb-4 text-foreground">
+                                    Your Progressive Overload account has been
+                                    successfully confirmed! You can now start
+                                    your strength training journey.
+                                </p>
+                                <div className="grid grid-cols-1 gap-4 mt-4 w-full">
+                                    <div className="bg-muted rounded-lg p-4 flex items-center">
+                                        <div className="bg-primary/10 rounded-full p-2 mr-3">
+                                            <CheckCircle className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-medium text-foreground">
+                                                Track your workout progress
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-4 flex items-center">
+                                        <div className="bg-primary/10 rounded-full p-2 mr-3">
+                                            <CheckCircle className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-medium text-foreground">
+                                                Access personalized training
+                                                plans
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-4 flex items-center">
+                                        <div className="bg-primary/10 rounded-full p-2 mr-3">
+                                            <CheckCircle className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-medium text-foreground">
+                                                Monitor strength gains over time
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
 
-                        <div className="mt-6 text-center">
-                            <Button variant="ghost" asChild>
+                        {status === "error" && (
+                            <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.5 }}
+                                className="flex flex-col items-center"
+                            >
+                                <XCircle className="h-16 w-16 text-destructive mb-4" />
+                                <p className="mb-2 text-destructive font-medium">
+                                    We couldn't confirm your account
+                                </p>
+                                <p className="text-muted-foreground mb-4">
+                                    {errorMessage ||
+                                        "The confirmation link may be invalid or expired."}
+                                </p>
+                                <div className="bg-muted rounded-lg p-4 w-full text-left">
+                                    <p className="font-medium mb-2 text-foreground">
+                                        What you can do:
+                                    </p>
+                                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                        <li>
+                                            Try signing up again with the same
+                                            email
+                                        </li>
+                                        <li>
+                                            Check if you clicked the correct
+                                            link from your email
+                                        </li>
+                                        <li>
+                                            Contact support if the problem
+                                            persists
+                                        </li>
+                                    </ul>
+                                </div>
+                            </motion.div>
+                        )}
+                    </CardContent>
+                    <CardFooter className="flex justify-center">
+                        {status === "loading" && (
+                            <Button
+                                disabled
+                                variant="outline"
+                                className="w-full bg-transparent"
+                            >
+                                Please wait...
+                            </Button>
+                        )}
+
+                        {status === "success" && (
+                            <Button asChild className="w-full">
                                 <Link
                                     href="/"
-                                    className="inline-flex items-center"
+                                    className="flex items-center justify-center"
                                 >
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Back to Home
+                                    Start Your Fitness Journey
                                 </Link>
                             </Button>
-                        </div>
-                    </CardContent>
+                        )}
+
+                        {status === "error" && (
+                            <div className="flex flex-col w-full gap-2">
+                                <Button asChild variant="outline">
+                                    <Link
+                                        href="/"
+                                        className="inline-flex items-center justify-center"
+                                    >
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Back to Home
+                                    </Link>
+                                </Button>
+                            </div>
+                        )}
+                    </CardFooter>
                 </Card>
             </motion.div>
         </div>
