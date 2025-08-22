@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, TrendingUp, Target, Zap, BookOpen, Play } from "lucide-react"
 import Image from "next/image"
-
+import ProgressiveOverloadExplanation from "@/components/about_pr_ol/whatIsProgressiveOverloading"
+import GooglePlayDownload from "@/components/google_play_download/google_play_download"
+import Link from "next/link"
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
   animate: { opacity: 1, y: 0 },
@@ -96,7 +98,7 @@ export default function HomePage() {
           >
             <motion.div variants={fadeInUp}>
               <Badge variant="secondary" className="mb-4 text-sm font-medium">
-                Science-Based Training
+                Beta
               </Badge>
             </motion.div>
 
@@ -115,18 +117,17 @@ export default function HomePage() {
             </motion.p>
 
             <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" variants={fadeInUp}>
-              <Button size="lg" className="text-lg px-8 py-6">
-                Start Your Journey
+              <Button  size="lg" className="text-lg px-8 py-6">
+                <Link href='https://www.google.com'>Start Your Journey</Link>
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-transparent">
-                Learn More
               </Button>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
+      {/* What is Progressive Overload Section */}
+      <ProgressiveOverloadExplanation />
       {/* Principles Section */}
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -283,9 +284,27 @@ export default function HomePage() {
               Get Started Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
+            
           </motion.div>
         </div>
       </section>
+
+      {/* Google Play Download Section */}
+
+      <section className="py-24 bg-white text-white">
+        <div className="container mx-auto px-4">
+          <motion.div
+            className="text-center mb-16"
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+          >
+            <GooglePlayDownload />
+          </motion.div>
+        </div>
+      </section>
+    
 
       {/* Footer */}
       <footer className="py-12 bg-card">
