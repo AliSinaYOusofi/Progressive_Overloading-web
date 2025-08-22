@@ -159,7 +159,7 @@ export default function ConfirmAccountPage() {
                             >
                                 <XCircle className="h-16 w-16 text-destructive mb-4" />
                                 <p className="mb-2 text-destructive font-medium">
-                                    We couldn't confirm your account
+                                    We couldn&apos;t confirm your account
                                 </p>
                                 <p className="text-muted-foreground mb-4">
                                     {errorMessage ||
